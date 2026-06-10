@@ -2,8 +2,8 @@
 ==============================================================
 Day 10 Lab: Build Your First Automated ETL Pipeline
 ==============================================================
-Student ID: AI20K-XXXX  (<-- Thay XXXX bang ma so cua ban)
-Name: Your Name Here
+Student ID: 2A202600544
+Name: Giang Thành Công
 
 Nhiem vu:
    1. Extract:   Doc du lieu tu file JSON
@@ -42,12 +42,16 @@ def extract(file_path):
         list: Danh sach cac records (dictionaries)
     """
     print(f"Extracting data from {file_path}...")
-    # TODO: Viet code doc file JSON o day
-    # Vi du:
-    #   with open(file_path, 'r') as f:
-    #       data = json.load(f)
-    #   return data
-    pass
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data
+    except FileNotFoundError:
+        print(f"Error: {file_path} not found.")
+        return None
+    except json.JSONDecodeError:
+        print(f"Error: Failed to decode JSON from {file_path}.")
+        return None
 
 
 def validate(data):
@@ -69,10 +73,25 @@ def validate(data):
     valid_records = []
     error_count = 0
 
-    # TODO: Lap qua data, kiem tra tung record
-    # Giu lai record hop le, dem record loi
+    for item in data:
+        price = item.get('price')
+        category = item.get('category')
+        
+        # Check price is not None, is a number, and > 0
+        try:
+            price_val = float(price) if price is not None else 0
+        except (ValueError, TypeError):
+            price_val = 0
+            
+        # Check category is not None and not empty string
+        category_str = str(category).strip() if category is not None else ""
+        
+        if price_val <= 0 or not category_str:
+            error_count += 1
+        else:
+            valid_records.append(item)
 
-    print(f"Validation complete. Valid: {len(valid_records)}, Errors: {error_count}")
+    print(f"Validation complete. {len(valid_records)} valid records, {error_count} dropped records.")
     return valid_records
 
 
@@ -94,8 +113,14 @@ def transform(data):
     Returns:
         pd.DataFrame: DataFrame da duoc transform
     """
-    # TODO: Tao DataFrame va ap dung transformations
-    pass
+    if not data:
+        return pd.DataFrame()
+        
+    df = pd.DataFrame(data)
+    df['discounted_price'] = df['price'] * 0.9
+    df['category'] = df['category'].astype(str).str.title()
+    df['processed_at'] = datetime.datetime.now().isoformat()
+    return df
 
 
 def load(df, output_path):
@@ -105,7 +130,7 @@ def load(df, output_path):
     Goi y:
        - df.to_csv(output_path, index=False)
     """
-    # TODO: Luu DataFrame ra CSV
+    df.to_csv(output_path, index=False)
     print(f"Data saved to {output_path}")
 
 
